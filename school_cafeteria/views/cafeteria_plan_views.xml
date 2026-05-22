@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ═══ CAFETERIA PLAN ═══ -->
+    <record id="view_cafeteria_plan_form" model="ir.ui.view">
+        <field name="name">cafeteria.plan.form</field>
+        <field name="model">cafeteria.plan</field>
+        <field name="arch" type="xml">
+            <form string="Meal Plan">
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button class="oe_stat_button" icon="fa-users" type="object"
+                                name="action_view_students">
+                            <field name="student_count" string="Students" widget="statinfo"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <label for="name"/>
+                        <h1><field name="name" placeholder="e.g. Annual Gold Plan"/></h1>
+                    </div>
+                    <group>
+                        <group string="Plan Type &amp; Pricing">
+                            <field name="duration_type"/>
+                            <field name="price" string="Parent Pays (EGP)"/>
+                            <field name="credit_amount" string="Credits Loaded (EGP)"/>
+                            <field name="bonus_percent" string="Bonus %" readonly="1"/>
+                        </group>
+                        <group string="Spending Rules">
+                            <field name="daily_limit" help="0 = use student's own limit"/>
+                            <field name="allowed_category_ids" widget="many2many_tags"
+                                   help="Leave empty = all products allowed"/>
+                        </group>
+                    </group>
+                    <group string="Description (shown to parents in portal)">
+                        <field name="description" nolabel="1" placeholder="Describe what this plan includes..."/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_cafeteria_plan_list" model="ir.ui.view">
+        <field name="name">cafeteria.plan.list</field>
+        <field name="model">cafeteria.plan</field>
+        <field name="arch" type="xml">
+            <list string="Meal Plans">
+                <field name="name"/>
+                <field name="duration_type"/>
+                <field name="price" string="Price (EGP)"/>
+                <field name="credit_amount" string="Credits (EGP)"/>
+                <field name="bonus_percent" string="Bonus %"/>
+                <field name="daily_limit" string="Daily Limit"/>
+                <field name="student_count" string="Active Students"/>
+                <field name="active" widget="toggle_button"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_cafeteria_plan" model="ir.actions.act_window">
+        <field name="name">Meal Plans</field>
+        <field name="res_model">cafeteria.plan</field>
+        <field name="view_mode">list,form</field>
+    </record>
+
+
+
+
+
+    <!-- ═══ WALLET TRANSACTIONS (standalone view) ═══ -->
+    <record id="view_wallet_transaction_list" model="ir.ui.view">
+        <field name="name">school.wallet.transaction.list</field>
+        <field name="model">school.wallet.transaction</field>
+        <field name="arch" type="xml">
+            <list string="Transactions"
+                  decoration-success="transaction_type == 'credit'"
+                  decoration-danger="transaction_type == 'purchase'">
+                <field name="date"/>
+                <field name="student_id"/>
+                <field name="transaction_type"/>
+                <field name="amount" sum="Total"/>
+                <field name="reference"/>
+                <field name="cashier_id"/>
+                <field name="plan_id" optional="hide"/>
+                <field name="state"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_wallet_transaction" model="ir.actions.act_window">
+        <field name="name">All Transactions</field>
+        <field name="res_model">school.wallet.transaction</field>
+        <field name="view_mode">list,form</field>
+        <field name="search_view_id" ref="school_cafeteria.view_wallet_transaction_search_main"/>
+    </record>
+
+</odoo>

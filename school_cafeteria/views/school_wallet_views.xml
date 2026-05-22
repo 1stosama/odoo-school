@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ══════════════════════════════════════════════════════════
+         SCHOOL WALLET — FORM VIEW
+    ══════════════════════════════════════════════════════════ -->
+    <record id="view_school_wallet_form" model="ir.ui.view">
+        <field name="name">school.wallet.form</field>
+        <field name="model">school.wallet</field>
+        <field name="arch" type="xml">
+            <form string="Student Wallet" create="false" delete="false">
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_transactions"
+                                type="object"
+                                class="oe_stat_button"
+                                icon="fa-exchange">
+                            <field name="transaction_count"
+                                   string="Transactions"
+                                   widget="statinfo"/>
+                        </button>
+                    </div>
+
+                    <div class="oe_title">
+                        <h1>
+                            <field name="student_id" readonly="1"/>
+                        </h1>
+                        <h2>
+                            <field name="balance" readonly="1"/>
+                            <span class="text-muted"> EGP</span>
+                        </h2>
+                    </div>
+
+                    <group>
+                        <group>
+                            <field name="currency_id" readonly="1"/>
+                            <field name="last_activity" readonly="1"/>
+                        </group>
+                    </group>
+
+                    <notebook>
+                        <page string="Transaction History" name="transactions">
+                            <field name="transaction_ids" readonly="1" nolabel="1">
+                                <list string="Transactions"
+                                      create="false" delete="false"
+                                      decoration-success="transaction_type == 'credit'"
+                                      decoration-danger="transaction_type == 'purchase'"
+                                      decoration-info="transaction_type == 'refund'">
+                                    <field name="date"/>
+                                    <field name="transaction_type" string="Type"/>
+                                    <field name="amount" string="Amount (EGP)" sum="Total"/>
+                                    <field name="reference"/>
+                                    <field name="cashier_id"/>
+                                    <field name="plan_id" optional="hide"/>
+                                    <field name="state"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- ══════════════════════════════════════════════════════════
+         SCHOOL WALLET — LIST VIEW
+    ══════════════════════════════════════════════════════════ -->
+    <record id="view_school_wallet_list" model="ir.ui.view">
+        <field name="name">school.wallet.list</field>
+        <field name="model">school.wallet</field>
+        <field name="arch" type="xml">
+            <list string="Student Wallets"
+                  create="false" delete="false"
+                  decoration-warning="balance &lt; 30"
+                  decoration-danger="balance &lt;= 0">
+                <field name="student_id"/>
+                <field name="balance" string="Balance (EGP)" sum="Total Balance"/>
+                <field name="last_activity"/>
+                <field name="transaction_count" string="Transactions"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ══════════════════════════════════════════════════════════
+         SCHOOL WALLET — ACTION
+    ══════════════════════════════════════════════════════════ -->
+    <record id="action_school_wallet" model="ir.actions.act_window">
+        <field name="name">Student Wallets</field>
+        <field name="res_model">school.wallet</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No wallets found.
+            </p>
+            <p>Wallets are created automatically when students are enrolled.</p>
+        </field>
+    </record>
+
+</odoo>

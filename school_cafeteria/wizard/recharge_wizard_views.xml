@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <record id="view_recharge_wizard_form" model="ir.ui.view">
+        <field name="name">school.recharge.wizard.form</field>
+        <field name="model">school.recharge.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Quick Wallet Recharge">
+                <sheet>
+                    <div class="alert alert-info mb-3" role="alert">
+                        <strong>Quick recharge</strong> — credits the wallet immediately.
+                        Use this when a parent pays cash on the spot.
+                        For formal tracking, use Recharge Requests instead.
+                    </div>
+
+                    <group>
+                        <group string="Student">
+                            <field name="student_id" readonly="1"/>
+                            <field name="current_balance" readonly="1"/>
+                        </group>
+                        <group string="Plan or Manual">
+                            <field name="recharge_type" widget="radio"/>
+                            <field name="plan_id"
+                                   invisible="recharge_type != 'plan'" required="recharge_type == 'plan'"/>
+                        </group>
+                    </group>
+
+                    <group>
+                        <group string="Amounts">
+                            <field name="payment_amount"/>
+                            <field name="credit_amount"/>
+                            <field name="bonus_amount" readonly="1"
+                                   invisible="bonus_amount == 0"/>
+                        </group>
+                        <group string="Result Preview">
+                            <field name="new_balance_preview" readonly="1"
+                                   string="Balance After Recharge (EGP)"/>
+                        </group>
+                    </group>
+
+                    <group>
+                        <field name="note" placeholder="Optional note / reference..."/>
+                    </group>
+                </sheet>
+
+                <footer>
+                    <button name="action_recharge"
+                            string="Credit Wallet Now"
+                            type="object"
+                            class="btn-success"
+                            data-hotkey="q"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <!-- Action to open wizard from student form -->
+    <record id="action_recharge_wizard" model="ir.actions.act_window">
+        <field name="name">Quick Recharge</field>
+        <field name="res_model">school.recharge.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="view_id" ref="view_recharge_wizard_form"/>
+        <field name="target">new</field>
+        <field name="context">{'default_student_id': active_id}</field>
+    </record>
+
+</odoo>

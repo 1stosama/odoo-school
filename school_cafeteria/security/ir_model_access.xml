@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="access_cafeteria_plan_admin" model="ir.model.access">
+        <field name="name">cafeteria.plan admin</field>
+        <field name="model_id" ref="school_cafeteria.model_cafeteria_plan"/>
+        <field name="group_id" ref="school_cafeteria.group_cafeteria_admin"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+    <record id="access_cafeteria_plan_accountant" model="ir.model.access">
+        <field name="name">cafeteria.plan accountant</field>
+        <field name="model_id" ref="school_cafeteria.model_cafeteria_plan"/>
+        <field name="group_id" ref="school_cafeteria.group_cafeteria_accountant"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="0"/>
+        <field name="perm_create" eval="0"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+    <record id="access_cafeteria_plan_cashier" model="ir.model.access">
+        <field name="name">cafeteria.plan cashier</field>
+        <field name="model_id" ref="school_cafeteria.model_cafeteria_plan"/>
+        <field name="group_id" ref="school_cafeteria.group_cafeteria_cashier"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="0"/>
+        <field name="perm_create" eval="0"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+    <record id="access_school_student_admin" model="ir.model.access">
+        <field name="name">school.student admin</field>
+        <field name="model_id" ref="school_cafeteria.model_school_student"/>
+        <field name="group_id" ref="school_cafeteria.group_cafeteria_admin"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+    <record id="access_school_student_accountant" model="ir.model.access">
+        <field name="name">school.student accountant</field>
+        <field name="model_id" ref="school_cafeteria.model_school_student"/>
+        <field name="group_id" ref="school_cafeteria.group_cafeteria_accountant"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="0"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+    <record id="access_school_student_cashier" model="ir.model.access">
+        <field name="name">school.student cashier</field>
+        <field name="model_id" ref="school_cafeteria.model_school_student"/>
+        <field name="group_id" ref="school_cafeteria.group_cafeteria_cashier"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="0"/>
+        <field name="perm_create" eval="0"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+    <record id="access_school_wallet_admin" model="ir.model.access">
+        <field name="name">school.wallet admin</field>
+        <field name="model_id" ref="school_cafeteria.model_school_wallet"/>
+        <field name="group_id" ref="school_cafeteria.group_cafeteria_admin"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+    <record id="access_school_wallet_accountant" model="ir.model.access">
+        <field name="name">school.wallet accountant</field>
+        <field name="model_id" ref="school_cafeteria.model_school_wallet"/>
+        <field name="group_id" ref="school_cafeteria.group_cafeteria_accountant"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="0"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+    <record id="access_school_wallet_cashier" model="ir.model.access">
+        <field name="name">school.wallet cashier</field>
+        <field name="model_id" ref="school_cafeteria.model_school_wallet"/>
+        <field name="group_id" ref="school_cafeteria.group_cafeteria_cashier"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="0"/>
+        <field name="perm_create" eval="0"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+    <record id="access_wallet_transaction_admin" model="ir.model.access">
+        <field name="name">school.wallet.transaction admin</field>
+        <field name="model_id" ref="school_cafeteria.model_school_wallet_transaction"/>
+        <field name="group_id" ref="school_cafeteria.group_cafeteria_admin"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+    <record id="access_wallet_transaction_accountant" model="ir.model.access">
+        <field name="name">school.wallet.transaction accountant</field>
+        <field name="model_id" ref="school_cafeteria.model_school_wallet_transaction"/>
+        <field name="group_id" ref="school_cafeteria.group_cafeteria_accountant"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="0"/>
+        <field name="perm_create" eval="0"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+    <record id="access_wallet_transaction_cashier" model="ir.model.access">
+        <field name="name">school.wallet.transaction cashier</field>
+        <field name="model_id" ref="school_cafeteria.model_school_wallet_transaction"/>
+        <field name="group_id" ref="school_cafeteria.group_cafeteria_cashier"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="0"/>
+        <field name="perm_create" eval="0"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+    <record id="access_recharge_request_admin" model="ir.model.access">
+        <field name="name">school.recharge.request admin</field>
+        <field name="model_id" ref="school_cafeteria.model_school_recharge_request"/>
+        <field name="group_id" ref="school_cafeteria.group_cafeteria_admin"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+    <record id="access_recharge_request_accountant" model="ir.model.access">
+        <field name="name">school.recharge.request accountant</field>
+        <field name="model_id" ref="school_cafeteria.model_school_recharge_request"/>
+        <field name="group_id" ref="school_cafeteria.group_cafeteria_accountant"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="0"/>
+    </record>
+    <record id="access_recharge_wizard_admin" model="ir.model.access">
+        <field name="name">school.recharge.wizard admin</field>
+        <field name="model_id" ref="school_cafeteria.model_school_recharge_wizard"/>
+        <field name="group_id" ref="school_cafeteria.group_cafeteria_admin"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+    <record id="access_recharge_wizard_accountant" model="ir.model.access">
+        <field name="name">school.recharge.wizard accountant</field>
+        <field name="model_id" ref="school_cafeteria.model_school_recharge_wizard"/>
+        <field name="group_id" ref="school_cafeteria.group_cafeteria_accountant"/>
+        <field name="perm_read" eval="1"/>
+        <field name="perm_write" eval="1"/>
+        <field name="perm_create" eval="1"/>
+        <field name="perm_unlink" eval="1"/>
+    </record>
+</odoo>

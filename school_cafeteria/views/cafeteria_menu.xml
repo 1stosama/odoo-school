@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ══ ROOT MENU ══ -->
+    <menuitem id="menu_cafeteria_root"
+              name="School Cafeteria"
+              sequence="80"
+              web_icon="school_cafeteria,static/description/icon.png"/>
+
+    <!-- ══ OPERATIONS ══ -->
+    <menuitem id="menu_cafeteria_operations"
+              name="Operations"
+              parent="menu_cafeteria_root"
+              sequence="10"/>
+
+    <menuitem id="menu_cafeteria_students"
+              name="Students"
+              parent="menu_cafeteria_operations"
+              action="action_school_student"
+              sequence="10"/>
+
+    <menuitem id="menu_cafeteria_recharge"
+              name="Recharge Requests"
+              parent="menu_cafeteria_operations"
+              action="action_school_recharge_request"
+              sequence="20"/>
+
+    <menuitem id="menu_cafeteria_transactions"
+              name="All Transactions"
+              parent="menu_cafeteria_operations"
+              action="action_school_wallet_transaction"
+              sequence="30"/>
+
+    <menuitem id="menu_cafeteria_wallets"
+              name="Student Wallets"
+              parent="menu_cafeteria_operations"
+              action="action_school_wallet"
+              sequence="40"
+              groups="school_cafeteria.group_cafeteria_accountant"/>
+
+    <!-- ══ REPORTS ══ -->
+    <menuitem id="menu_cafeteria_reports"
+              name="Reports"
+              parent="menu_cafeteria_root"
+              sequence="50"/>
+
+    <menuitem id="menu_report_transactions"
+              name="Sales Analysis"
+              parent="menu_cafeteria_reports"
+              action="action_school_wallet_transaction"
+              sequence="10"/>
+
+    <!-- ══ CONFIGURATION ══ -->
+    <menuitem id="menu_cafeteria_config"
+              name="Configuration"
+              parent="menu_cafeteria_root"
+              sequence="90"
+              groups="school_cafeteria.group_cafeteria_admin"/>
+
+    <menuitem id="menu_cafeteria_plans"
+              name="Meal Plans"
+              parent="menu_cafeteria_config"
+              action="action_cafeteria_plan"
+              sequence="10"/>
+
+</odoo>

@@ -1,0 +1,246 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ══════════════════════════════════════════════════════════
+         RECHARGE REQUEST — FORM VIEW
+    ══════════════════════════════════════════════════════════ -->
+    <record id="view_school_recharge_request_form" model="ir.ui.view">
+        <field name="name">school.recharge.request.form</field>
+        <field name="model">school.recharge.request</field>
+        <field name="arch" type="xml">
+            <form class="o_school_cafeteria_recharge_form" string="Recharge Request">
+                <header>
+                    <button name="action_confirm"
+                            string="Confirm"
+                            type="object"
+                            class="btn-primary"
+                            invisible="state != 'draft'"/>
+                    <button name="action_mark_paid"
+                            string="Mark as Paid"
+                            type="object"
+                            class="btn-primary"
+                            invisible="state != 'confirmed'"/>
+                    <button name="action_credit_wallet"
+                            string="Credit Wallet ✓"
+                            type="object"
+                            class="btn-success"
+                            invisible="state != 'paid'"
+                            confirm="This will add credits to the student's wallet. Proceed?"/>
+                    <button name="action_cancel"
+                            string="Cancel"
+                            type="object"
+                            class="btn-secondary"
+                            invisible="state in ('credited', 'cancelled')"/>
+                    <button name="action_reset_to_draft"
+                            string="Reset to Draft"
+                            type="object"
+                            invisible="state not in ('cancelled', 'confirmed')"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,confirmed,paid,credited"/>
+                </header>
+
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" readonly="1"/></h1>
+                    </div>
+
+                    <group>
+                        <group string="Student">
+                            <field name="student_id"
+                                   readonly="state != 'draft'"/>
+                            <field name="current_balance"
+                                   string="Current Wallet Balance (EGP)"
+                                   readonly="1"/>
+                        </group>
+                        <group string="Request Type">
+                            <field name="recharge_type" widget="radio"
+                                   readonly="state != 'draft'"/>
+                            <field name="plan_id"
+                                   invisible="recharge_type != 'plan'" required="recharge_type == 'plan'" readonly="state != 'draft'"/>
+                            <field name="plan_expiry"
+                                   invisible="recharge_type != 'plan'"/>
+                        </group>
+                    </group>
+
+                    <group>
+                        <group string="Amounts">
+                            <field name="payment_amount"
+                                   readonly="state != 'draft'"/>
+                            <field name="credit_amount"
+                                   readonly="state != 'draft'"/>
+                            <field name="bonus_amount" readonly="1"
+                                   invisible="bonus_amount == 0.0"/>
+                        </group>
+                        <group string="Dates">
+                            <field name="request_date" readonly="1"/>
+                            <field name="payment_date"/>
+                            <field name="credited_date" readonly="1"/>
+                        </group>
+                    </group>
+
+                    <group string="Notes">
+                        <field name="note" nolabel="1" placeholder="Notes for accountant..."/>
+                    </group>
+                     
+                </sheet>
+
+               <div class="oe_chatter">
+                    <field name="message_follower_ids"/>
+                    <field name="message_ids"/>
+                </div>
+            </form>
+        </field>
+    </record>
+
+    <!-- ══════════════════════════════════════════════════════════
+         RECHARGE REQUEST — LIST VIEW
+    ══════════════════════════════════════════════════════════ -->
+    <record id="view_school_recharge_request_list" model="ir.ui.view">
+        <field name="name">school.recharge.request.list</field>
+        <field name="model">school.recharge.request</field>
+        <field name="arch" type="xml">
+            <list string="Recharge Requests"
+                  decoration-success="state == 'credited'"
+                  decoration-warning="state == 'paid'"
+                  decoration-info="state == 'confirmed'"
+                  decoration-muted="state == 'cancelled'">
+                <field name="name"/>
+                <field name="student_id"/>
+                <field name="recharge_type" string="Type"/>
+                <field name="plan_id" optional="show"/>
+                <field name="payment_amount" string="Paid (EGP)"/>
+                <field name="credit_amount" string="Credits (EGP)"/>
+                <field name="bonus_amount" string="Bonus (EGP)" optional="show"/>
+                <field name="state" widget="badge"
+                       decoration-success="state == 'credited'"
+                       decoration-warning="state in ('paid', 'confirmed')"
+                       decoration-danger="state == 'cancelled'"/>
+                <field name="request_date"/>
+                <button name="action_confirm" string="Confirm" type="object"
+                        class="btn-sm btn-primary"
+                        invisible="state != 'draft'"/>
+                <button name="action_mark_paid" string="Mark Paid" type="object"
+                        class="btn-sm btn-warning"
+                        invisible="state != 'confirmed'"/>
+                <button name="action_credit_wallet" string="Credit ✓" type="object"
+                        class="btn-sm btn-success"
+                        invisible="state != 'paid'"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ══════════════════════════════════════════════════════════
+         RECHARGE REQUEST — KANBAN VIEW
+    ══════════════════════════════════════════════════════════ -->
+    <record id="view_school_recharge_request_kanban" model="ir.ui.view">
+        <field name="name">school.recharge.request.kanban</field>
+        <field name="model">school.recharge.request</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="state" class="o_kanban_small_column">
+                <field name="name"/>
+                <field name="student_id"/>
+                <field name="payment_amount"/>
+                <field name="credit_amount"/>
+                <field name="bonus_amount"/>
+                <field name="plan_id"/>
+                <field name="state"/>
+                <templates>
+                    <t t-name="card">
+                        <div class="oe_kanban_card oe_kanban_global_click">
+                            <div class="d-flex justify-content-between">
+                                <strong><field name="student_id"/></strong>
+                                <span class="text-muted small"><field name="name"/></span>
+                            </div>
+                            <t t-if="record.plan_id.value">
+                                <div class="badge bg-success mt-1 mb-1">
+                                    <field name="plan_id"/>
+                                </div>
+                            </t>
+                            <div class="mt-1">
+                                <span class="text-muted">Paid:</span>
+                                <strong><field name="payment_amount"/> EGP</strong>
+                                <span class="text-muted ms-2">Credits:</span>
+                                <strong class="text-success"><field name="credit_amount"/> EGP</strong>
+                            </div>
+                            <t t-if="record.bonus_amount.raw_value > 0">
+                                <div class="small text-success">
+                                    +<field name="bonus_amount"/> EGP bonus
+                                </div>
+                            </t>
+                            <div class="mt-2">
+                                <t t-if="record.state.raw_value == 'draft'">
+                                    <button name="action_confirm" type="object"
+                                            class="btn btn-sm btn-primary w-100">
+                                        Confirm
+                                    </button>
+                                </t>
+                                <t t-if="record.state.raw_value == 'confirmed'">
+                                    <button name="action_mark_paid" type="object"
+                                            class="btn btn-sm btn-warning w-100">
+                                        Mark as Paid
+                                    </button>
+                                </t>
+                                <t t-if="record.state.raw_value == 'paid'">
+                                    <button name="action_credit_wallet" type="object"
+                                            class="btn btn-sm btn-success w-100">
+                                        Credit Wallet ✓
+                                    </button>
+                                </t>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <!-- ══════════════════════════════════════════════════════════
+         RECHARGE REQUEST — SEARCH VIEW
+    ══════════════════════════════════════════════════════════ -->
+    <record id="view_school_recharge_request_search" model="ir.ui.view">
+        <field name="name">school.recharge.request.search</field>
+        <field name="model">school.recharge.request</field>
+        <field name="arch" type="xml">
+            <search string="Search Recharge Requests">
+                <field name="name"/>
+                <field name="student_id"/>
+                <filter string="Draft" name="draft" domain="[('state', '=', 'draft')]"/>
+                <filter string="Awaiting Payment" name="confirmed"
+                        domain="[('state', '=', 'confirmed')]"/>
+                <filter string="Paid — Ready to Credit" name="paid"
+                        domain="[('state', '=', 'paid')]"/>
+                <filter string="Credited" name="credited"
+                        domain="[('state', '=', 'credited')]"/>
+                <separator/>
+                <filter string="Meal Plans Only" name="plans"
+                        domain="[('recharge_type', '=', 'plan')]"/>
+                <group>
+                    <filter string="Student" name="by_student"
+                            context="{'group_by': 'student_id'}"/>
+                    <filter string="State" name="by_state"
+                            context="{'group_by': 'state'}"/>
+                    <filter string="Plan" name="by_plan"
+                            context="{'group_by': 'plan_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- ══════════════════════════════════════════════════════════
+         ACTION
+    ══════════════════════════════════════════════════════════ -->
+    <record id="action_school_recharge_request" model="ir.actions.act_window">
+        <field name="name">Recharge Requests</field>
+        <field name="res_model">school.recharge.request</field>
+        <field name="view_mode">kanban,list,form</field>
+        <field name="search_view_id" ref="view_school_recharge_request_search"/>
+        <field name="context">{'search_default_paid': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">
+                No recharge requests yet.
+            </p>
+            <p>Create a recharge request when a parent wants to top up their child's cafeteria balance.</p>
+        </field>
+    </record>
+
+</odoo>

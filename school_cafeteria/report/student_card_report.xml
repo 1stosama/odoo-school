@@ -1,0 +1,146 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- Student ID Card Report Action -->
+    <record id="action_report_student_card" model="ir.actions.report">
+        <field name="name">Student Cafeteria Card</field>
+        <field name="model">school.student</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">school_cafeteria.report_student_card_template</field>
+        <field name="report_file">school_cafeteria.report_student_card_template</field>
+        <field name="binding_model_id" ref="model_school_student"/>
+        <field name="binding_type">report</field>
+        <field name="paperformat_id" ref="base.paperformat_euro"/>
+    </record>
+
+    <!-- Student Card Template — A6 card, printable 2-up on A4 -->
+    <template id="report_student_card_template">
+        <t t-call="web.html_container">
+            <t t-foreach="docs" t-as="student">
+                <div style="
+                    width: 85mm;
+                    height: 54mm;
+                    border: 2px solid #1D6B4A;
+                    border-radius: 6px;
+                    padding: 8px;
+                    margin: 4px;
+                    display: inline-block;
+                    font-family: Arial, sans-serif;
+                    page-break-inside: avoid;
+                    background: white;
+                ">
+                    <!-- Header bar -->
+                    <div style="background: #1D6B4A; color: white; padding: 4px 8px; border-radius: 3px; margin-bottom: 6px;">
+                        <span style="font-size: 11px; font-weight: bold;">SCHOOL CAFETERIA</span>
+                        <span style="font-size: 9px; float: right;">كافيتيريا المدرسة</span>
+                    </div>
+
+                    <div style="display: flex; gap: 8px;">
+                        <!-- Photo -->
+                        <div style="flex-shrink: 0;">
+                            <t t-if="student.photo">
+                                <img t-att-src="'data:image/png;base64,' + (student.photo.decode() if student.photo else '')"
+                                     style="width: 36px; height: 36px; border-radius: 3px; object-fit: cover;"
+                                     onerror="this.style.display='none'"/>
+                            </t>
+                            <t t-else="">
+                                <div style="width: 36px; height: 36px; background: #eee; border-radius: 3px; display: flex; align-items: center; justify-content: center; font-size: 18px;">👤</div>
+                            </t>
+                        </div>
+
+                        <!-- Student info -->
+                        <div style="flex: 1;">
+                            <div style="font-size: 12px; font-weight: bold; margin-bottom: 2px;">
+                                <t t-esc="student.name"/>
+                            </div>
+                            <div style="font-size: 9px; color: #555;">
+                                Grade: <t t-esc="student.grade or '-'"/>
+                                <t t-if="student.section"> · <t t-esc="student.section"/></t>
+                            </div>
+                            <div style="font-size: 9px; color: #1D6B4A; font-weight: bold;">
+                                <t t-esc="student.student_code"/>
+                            </div>
+                            <t t-if="student.plan_id and student.plan_active">
+                                <div style="font-size: 8px; background: #EAF4EE; color: #1D6B4A; padding: 1px 4px; border-radius: 2px; margin-top: 2px; display: inline-block;">
+                                    <t t-esc="student.plan_id.name"/>
+                                </div>
+                            </t>
+                        </div>
+                    </div>
+
+                    <!-- Barcode code (text only — system missing rlPyCairo for rendered barcodes) -->
+                    <t t-if="student.card_uid">
+                        <div style="text-align: center; margin-top: 6px; padding-top: 4px; border-top: 1px solid #eee;">
+                            <div style="font-size: 20px; font-weight: bold; letter-spacing: 4px; font-family: 'Courier New', monospace; color: #000;">
+                                <t t-esc="student.card_uid"/>
+                            </div>
+                            <div style="font-size: 9px; color: #555; margin-top: 2px;">
+                                Present this code at the cafeteria POS
+                            </div>
+                        </div>
+                    </t>
+                    <t t-else="">
+                        <div style="text-align: center; margin-top: 6px; padding-top: 4px; border-top: 1px solid #eee;">
+                            <div style="font-size: 20px; font-weight: bold; letter-spacing: 4px; font-family: 'Courier New', monospace; color: #333;">
+                                <t t-esc="student.student_code"/>
+                            </div>
+                            <div style="font-size: 9px; color: #999; margin-top: 2px;">
+                                Assign a Card UID to enable barcode scanning
+                            </div>
+                        </div>
+                    </t>
+                </div>
+            </t>
+        </t>
+    </template>
+
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <!-- Daily Sales Report                                          -->
+    <!-- ═══════════════════════════════════════════════════════════ -->
+    <record id="action_report_daily_cafeteria_sales" model="ir.actions.report">
+        <field name="name">Daily Cafeteria Sales</field>
+        <field name="model">school.wallet.transaction</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">school_cafeteria.report_daily_sales_template</field>
+        <field name="report_file">school_cafeteria.report_daily_sales_template</field>
+        <field name="binding_model_id" ref="model_school_wallet_transaction"/>
+        <field name="binding_type">report</field>
+    </record>
+
+    <template id="report_daily_sales_template">
+        <t t-call="web.html_container">
+            <t t-call="web.external_layout">
+                <div class="page">
+                    <h2>Daily Cafeteria Sales Report</h2>
+                    <p class="text-muted">Generated: <span t-esc="context_timestamp(datetime.datetime.now()).strftime('%Y-%m-%d %H:%M')"/></p>
+
+                    <table class="table table-sm table-bordered">
+                        <thead>
+                            <tr style="background: #1D6B4A; color: white;">
+                                <th>Time</th>
+                                <th>Student</th>
+                                <th>Type</th>
+                                <th>Amount (EGP)</th>
+                                <th>Reference</th>
+                                <th>Cashier</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <t t-foreach="docs" t-as="txn">
+                                <tr>
+                                    <td><t t-esc="txn.date.strftime('%H:%M')"/></td>
+                                    <td><t t-esc="txn.student_id.name"/></td>
+                                    <td><t t-esc="txn.transaction_type"/></td>
+                                    <td style="text-align: right;"><t t-esc="'%.2f' % txn.amount"/></td>
+                                    <td><t t-esc="txn.reference or ''"/></td>
+                                    <td><t t-esc="txn.cashier_id.name or ''"/></td>
+                                </tr>
+                            </t>
+                        </tbody>
+                    </table>
+                </div>
+            </t>
+        </t>
+    </template>
+
+</odoo>

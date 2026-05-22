@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ══════════════════════════════════════════════════════════
+         DAILY CAFETERIA SALES REPORT
+         Triggered from the Transactions list view or Reports menu.
+         Shows all transactions for selected records.
+    ══════════════════════════════════════════════════════════ -->
+
+    <record id="action_report_daily_sales" model="ir.actions.report">
+        <field name="name">Daily Cafeteria Sales Report</field>
+        <field name="model">school.wallet.transaction</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">school_cafeteria.report_daily_sales_doc</field>
+        <field name="report_file">school_cafeteria.report_daily_sales_doc</field>
+        <field name="binding_model_id" ref="model_school_wallet_transaction"/>
+        <field name="binding_type">report</field>
+        <field name="paperformat_id" ref="base.paperformat_euro"/>
+    </record>
+
+    <template id="report_daily_sales_doc">
+        <t t-call="web.html_container">
+            <t t-call="web.external_layout">
+                <div class="page">
+
+                    <!-- Title -->
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:16px;">
+                        <div>
+                            <h2 style="margin:0; color:#1D6B4A;">Daily Cafeteria Sales Report</h2>
+                            <p style="margin:4px 0 0; color:#888; font-size:12px;">
+                                تقرير مبيعات الكافيتيريا اليومي
+                            </p>
+                        </div>
+                        <div style="text-align:right; font-size:12px; color:#555;">
+                            <div>Generated: <t t-esc="context_timestamp(datetime.datetime.now()).strftime('%Y-%m-%d %H:%M')"/></div>
+                            <div>Records: <t t-esc="len(docs)"/></div>
+                        </div>
+                    </div>
+
+                    <!-- Summary boxes -->
+                    <t t-set="purchases" t-value="docs.filtered(lambda t: t.transaction_type == 'purchase' and t.state == 'done')"/>
+                    <t t-set="credits" t-value="docs.filtered(lambda t: t.transaction_type == 'credit' and t.state == 'done')"/>
+
+                    <div style="display:flex; gap:12px; margin-bottom:20px;">
+                        <div style="flex:1; background:#EAF4EE; border:1px solid #1D6B4A; border-radius:5px; padding:12px; text-align:center;">
+                            <div style="font-size:11px; color:#1D6B4A; font-weight:600; text-transform:uppercase; letter-spacing:.05em;">Total Sales</div>
+                            <div style="font-size:24px; font-weight:700; color:#1D6B4A;">
+                                <t t-esc="'%.2f' % sum(purchases.mapped('amount'))"/> EGP
+                            </div>
+                            <div style="font-size:11px; color:#888;"><t t-esc="len(purchases)"/> transactions</div>
+                        </div>
+                        <div style="flex:1; background:#EAF0FA; border:1px solid #1A3D6B; border-radius:5px; padding:12px; text-align:center;">
+                            <div style="font-size:11px; color:#1A3D6B; font-weight:600; text-transform:uppercase; letter-spacing:.05em;">Total Recharged</div>
+                            <div style="font-size:24px; font-weight:700; color:#1A3D6B;">
+                                <t t-esc="'%.2f' % sum(credits.mapped('amount'))"/> EGP
+                            </div>
+                            <div style="font-size:11px; color:#888;"><t t-esc="len(credits)"/> transactions</div>
+                        </div>
+                        <div style="flex:1; background:#FBF3E6; border:1px solid #92520A; border-radius:5px; padding:12px; text-align:center;">
+                            <div style="font-size:11px; color:#92520A; font-weight:600; text-transform:uppercase; letter-spacing:.05em;">Students Served</div>
+                            <div style="font-size:24px; font-weight:700; color:#92520A;">
+                                <t t-esc="len(set(purchases.mapped('student_id.id')))"/>
+                            </div>
+                            <div style="font-size:11px; color:#888;">unique students</div>
+                        </div>
+                    </div>
+
+                    <!-- Transactions table -->
+                    <table style="width:100%; border-collapse:collapse; font-size:11px;">
+                        <thead>
+                            <tr style="background:#1D6B4A; color:white;">
+                                <th style="padding:6px 8px; text-align:left;">Time</th>
+                                <th style="padding:6px 8px; text-align:left;">Student</th>
+                                <th style="padding:6px 8px; text-align:left;">Type</th>
+                                <th style="padding:6px 8px; text-align:right;">Amount (EGP)</th>
+                                <th style="padding:6px 8px; text-align:left;">Reference</th>
+                                <th style="padding:6px 8px; text-align:left;">Cashier</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <t t-foreach="docs" t-as="txn">
+                                <tr t-att-style="'background:#EAF4EE;' if txn.transaction_type == 'credit' else ''">
+                                    <td style="padding:5px 8px; border-bottom:1px solid #eee;">
+                                        <t t-esc="txn.date.strftime('%H:%M')"/>
+                                    </td>
+                                    <td style="padding:5px 8px; border-bottom:1px solid #eee;">
+                                        <t t-esc="txn.student_id.name"/>
+                                        <t t-if="txn.student_id.grade">
+                                            <span style="color:#888; font-size:10px;"> · <t t-esc="txn.student_id.grade"/></span>
+                                        </t>
+                                    </td>
+                                    <td style="padding:5px 8px; border-bottom:1px solid #eee;">
+                                        <t t-esc="dict(txn._fields['transaction_type'].selection).get(txn.transaction_type, txn.transaction_type)"/>
+                                    </td>
+                                    <td style="padding:5px 8px; border-bottom:1px solid #eee; text-align:right; font-weight:600;"
+                                        t-att-style="'text-align:right; font-weight:600; color:#1D6B4A;' if txn.transaction_type == 'credit' else 'text-align:right; font-weight:600;'">
+                                        <t t-if="txn.transaction_type == 'credit'">+</t>
+                                        <t t-esc="'%.2f' % txn.amount"/>
+                                    </td>
+                                    <td style="padding:5px 8px; border-bottom:1px solid #eee; color:#555;">
+                                        <t t-esc="txn.reference or ''"/>
+                                    </td>
+                                    <td style="padding:5px 8px; border-bottom:1px solid #eee; color:#555;">
+                                        <t t-esc="txn.cashier_id.name or ''"/>
+                                    </td>
+                                </tr>
+                            </t>
+                        </tbody>
+                        <tfoot>
+                            <tr style="background:#f5f5f5; font-weight:700;">
+                                <td colspan="3" style="padding:6px 8px;">TOTAL PURCHASES</td>
+                                <td style="padding:6px 8px; text-align:right;">
+                                    <t t-esc="'%.2f' % sum(purchases.mapped('amount'))"/> EGP
+                                </td>
+                                <td colspan="2"></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+
+                    <!-- Signature line -->
+                    <div style="margin-top:40px; display:flex; justify-content:space-between;">
+                        <div style="text-align:center; width:200px;">
+                            <div style="border-top:1px solid #333; padding-top:6px; font-size:11px; color:#555;">
+                                Cafeteria Supervisor
+                            </div>
+                        </div>
+                        <div style="text-align:center; width:200px;">
+                            <div style="border-top:1px solid #333; padding-top:6px; font-size:11px; color:#555;">
+                                School Accountant
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </t>
+        </t>
+    </template>
+
+</odoo>

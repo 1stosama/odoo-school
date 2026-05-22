@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="payment_method_student_wallet" model="pos.payment.method">
+        <field name="name">Student Wallet</field>
+        <field name="is_cash_count" eval="False"/>
+    </record>
+</odoo>

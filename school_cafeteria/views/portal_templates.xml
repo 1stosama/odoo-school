@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ══════════════════════════════════════════════════════════
+         PARENT PORTAL — MAIN PAGE
+    ══════════════════════════════════════════════════════════ -->
+    <template id="portal_cafeteria_page" name="My Cafeteria">
+        <t t-call="portal.portal_layout">
+            <t t-set="breadcrumbs_searchbar" t-value="True"/>
+            <t t-call="portal.portal_searchbar">
+                <t t-set="title">Cafeteria</t>
+            </t>
+
+            <div class="o_portal_wrap">
+                <div class="container py-3">
+
+                    <!-- Success message after recharge request -->
+                    <t t-if="request.params.get('recharge_sent')">
+                        <div class="alert alert-success">
+                            ✅ Recharge request submitted. The school will process it shortly.
+                            رصيد طلب الشحن تم إرساله. سيتم معالجته قريباً.
+                        </div>
+                    </t>
+
+                    <h3 class="mb-3">
+                        <i class="fa fa-cutlery me-2"/> Cafeteria Balance
+                        <a href="/my/cafeteria/recharge" class="btn btn-sm btn-success float-end">
+                            + Request Recharge
+                        </a>
+                    </h3>
+
+                    <!-- Student balance cards -->
+                    <div class="row mb-4">
+                        <t t-foreach="students" t-as="student">
+                            <div class="col-md-4 mb-3">
+                                <div class="card"
+                                     t-att-class="'border-' + ('danger' if student.balance &lt;= 0 else 'warning' if student.balance &lt;= 30 else 'success')">
+                                    <div class="card-body">
+                                        <div class="d-flex align-items-center mb-2">
+                                            <t t-if="student.photo">
+                                                <img t-att-src="'/web/image/school.student/' + str(student.id) + '/photo'"
+                                                     style="width:40px;height:40px;border-radius:50%;object-fit:cover;margin-right:10px;"/>
+                                            </t>
+                                            <div>
+                                                <h5 class="card-title mb-0">
+                                                    <t t-esc="student.name"/>
+                                                </h5>
+                                                <small class="text-muted">
+                                                    <t t-esc="student.grade or ''"/>
+                                                    <t t-if="student.section"> - <t t-esc="student.section"/></t>
+                                                </small>
+                                            </div>
+                                        </div>
+
+                                        <div class="text-center my-2">
+                                            <div class="display-6 fw-bold"
+                                                 t-att-class="'text-' + ('danger' if student.balance &lt;= 0 else 'warning' if student.balance &lt;= 30 else 'success')">
+                                                <t t-esc="'%.2f' % student.balance"/> EGP
+                                            </div>
+                                            <small class="text-muted">Current Balance / الرصيد الحالي</small>
+                                        </div>
+
+                                        <t t-if="student.plan_active">
+                                            <div class="badge bg-success w-100 mb-1">
+                                                <t t-esc="student.plan_id.name"/>
+                                                · expires <t t-esc="str(student.plan_expiry)"/>
+                                            </div>
+                                        </t>
+
+                                        <t t-if="student.daily_limit">
+                                            <div class="small text-muted">
+                                                Daily limit: <t t-esc="'%.2f' % student.daily_limit"/> EGP
+                                                · Spent today: <t t-esc="'%.2f' % student.today_spent"/> EGP
+                                            </div>
+                                        </t>
+                                    </div>
+                                </div>
+                            </div>
+                        </t>
+                    </div>
+
+                    <!-- Recent transactions -->
+                    <h5>Recent Transactions / آخر المعاملات</h5>
+                    <div class="table-responsive">
+                        <table class="table table-sm table-hover">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>Date</th>
+                                    <th>Student</th>
+                                    <th>Type</th>
+                                    <th>Amount</th>
+                                    <th>Reference</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <t t-foreach="transactions" t-as="txn">
+                                    <tr t-att-class="'table-success' if txn.transaction_type == 'credit' else 'table-light'">
+                                        <td><t t-esc="txn.date.strftime('%Y-%m-%d %H:%M')"/></td>
+                                        <td><t t-esc="txn.student_id.name"/></td>
+                                        <td>
+                                            <span t-att-class="'badge ' + ('bg-success' if txn.transaction_type == 'credit' else 'bg-secondary')">
+                                                <t t-esc="txn.transaction_type"/>
+                                            </span>
+                                        </td>
+                                        <td t-att-class="'fw-bold ' + ('text-success' if txn.transaction_type == 'credit' else '')">
+                                            <t t-if="txn.transaction_type == 'credit'">+</t>
+                                            <t t-esc="'%.2f' % txn.amount"/> EGP
+                                        </td>
+                                        <td><t t-esc="txn.reference or ''"/></td>
+                                    </tr>
+                                </t>
+                                <t t-if="not transactions">
+                                    <tr>
+                                        <td colspan="5" class="text-center text-muted py-3">
+                                            No transactions yet.
+                                        </td>
+                                    </tr>
+                                </t>
+                            </tbody>
+                        </table>
+                    </div>
+
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <!-- ══════════════════════════════════════════════════════════
+         PARENT PORTAL — RECHARGE REQUEST PAGE
+    ══════════════════════════════════════════════════════════ -->
+    <template id="portal_recharge_page" name="Request Recharge">
+        <t t-call="portal.portal_layout">
+            <div class="o_portal_wrap">
+                <div class="container py-3" style="max-width: 600px;">
+                    <h3 class="mb-3">
+                        <i class="fa fa-plus-circle me-2"/> Request Balance Recharge
+                    </h3>
+                    <p class="text-muted">
+                        Submit a recharge request. Pay the school directly, and they will credit your child's account.
+                        <br/><small>أرسل طلب شحن. ادفع للمدرسة مباشرة وسيتم إضافة الرصيد.</small>
+                    </p>
+
+                    <form action="/my/cafeteria/recharge" method="post">
+                        <input type="hidden" name="csrf_token" t-att-value="request.csrf_token()"/>
+
+                        <div class="mb-3">
+                            <label class="form-label">Child / الطفل</label>
+                            <select name="student_id" class="form-select" required="1">
+                                <option value="">-- Select student --</option>
+                                <t t-foreach="students" t-as="student">
+                                    <option t-att-value="student.id">
+                                        <t t-esc="student.name"/> (Balance: <t t-esc="'%.2f' % student.balance"/> EGP)
+                                    </option>
+                                </t>
+                            </select>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Meal Plan (optional) / باقة وجبات (اختياري)</label>
+                            <select name="plan_id" class="form-select" id="plan-select">
+                                <option value="">-- Manual top-up --</option>
+                                <t t-foreach="plans" t-as="plan">
+                                    <option t-att-value="plan.id">
+                                        <t t-esc="plan.name"/>
+                                        — Pay <t t-esc="'%.0f' % plan.price"/> EGP,
+                                        Get <t t-esc="'%.0f' % plan.credit_amount"/> EGP credits
+                                        (+<t t-esc="'%.0f' % plan.bonus_percent"/>% bonus)
+                                    </option>
+                                </t>
+                            </select>
+                        </div>
+
+                        <div class="mb-3" id="manual-amount-section">
+                            <label class="form-label">Amount (EGP) / المبلغ</label>
+                            <input type="number" name="amount" class="form-control"
+                                   placeholder="e.g. 200" min="10" step="10"/>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Notes (optional)</label>
+                            <input type="text" name="note" class="form-control"
+                                   placeholder="Any notes for the accountant..."/>
+                        </div>
+
+                        <button type="submit" class="btn btn-success w-100">
+                            Submit Request / إرسال الطلب
+                        </button>
+                        <a href="/my/cafeteria" class="btn btn-outline-secondary w-100 mt-2">Cancel</a>
+                    </form>
+                </div>
+            </div>
+        </t>
+    </template>
+
+    <!-- Portal home entry -->
+    <template id="portal_my_home_cafeteria" name="Portal My Home: Cafeteria"
+              inherit_id="portal.portal_my_home" priority="30">
+        <xpath expr="//div[hasclass('o_portal_docs')]" position="inside">
+            <t t-if="cafeteria_count" t-call="portal.portal_docs_entry">
+                <t t-set="icon" t-value="'/web/static/img/avatars/avatar_2.jpg'"/>
+                <t t-set="title">Cafeteria</t>
+                <t t-set="text">View balance and transaction history</t>
+                <t t-set="url" t-value="'/my/cafeteria'"/>
+                <t t-set="count" t-value="cafeteria_count"/>
+                <t t-set="config_card" t-value="True"/>
+            </t>
+        </xpath>
+    </template>
+
+</odoo>

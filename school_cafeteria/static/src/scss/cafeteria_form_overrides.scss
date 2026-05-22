@@ -1,0 +1,17 @@
+.o_school_cafeteria_student_form.o_xxl_form_view .o_form_renderer,
+.o_school_cafeteria_recharge_form.o_xxl_form_view .o_form_renderer {
+    flex-direction: column !important;
+}
+
+.o_school_cafeteria_student_form.o_xxl_form_view .o_form_sheet_bg,
+.o_school_cafeteria_recharge_form.o_xxl_form_view .o_form_sheet_bg {
+    flex: none !important;
+    max-width: none !important;
+    width: 100% !important;
+    overflow: visible !important;
+}
+
+.o_school_cafeteria_student_form.o_xxl_form_view .o_form_view_container,
+.o_school_cafeteria_recharge_form.o_xxl_form_view .o_form_view_container {
+    width: auto !important;
+}

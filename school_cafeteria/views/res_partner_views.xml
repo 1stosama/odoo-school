@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!--
+        Extend res.partner (Contacts) form view to show a
+        "Cafeteria Children" smart button when the contact is
+        linked to one or more students as a parent.
+    -->
+    <record id="view_partner_cafeteria_button" model="ir.ui.view">
+        <field name="name">res.partner.cafeteria.button</field>
+        <field name="model">res.partner</field>
+        <field name="inherit_id" ref="base.view_partner_form"/>
+        <field name="arch" type="xml">
+            <div name="button_box" position="inside">
+                <button class="oe_stat_button"
+                        type="action"
+                        name="%(school_cafeteria.action_school_student)d"
+                        icon="fa-child"
+                        context="{'search_default_parent_id': id}"
+                        groups="school_cafeteria.group_cafeteria_cashier">
+                    <div class="o_field_widget o_stat_info">
+                        <span class="o_stat_text">Cafeteria</span>
+                        <span class="o_stat_text">Children</span>
+                    </div>
+                </button>
+            </div>
+        </field>
+    </record>
+
+    <!--
+        Add parent_id field to student many2one search
+        so when searching students by parent we see the right label.
+    -->
+
+</odoo>

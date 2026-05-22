@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="cron_low_balance_alert" model="ir.cron">
+        <field name="name">Cafeteria: Send Low Balance Alerts</field>
+        <field name="model_id" ref="school_cafeteria.model_school_student"/>
+        <field name="state">code</field>
+        <field name="code">model.cron_send_low_balance_alerts()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="active">True</field>
+        <field name="nextcall" eval="(DateTime.now() + timedelta(days=1)).replace(hour=8, minute=0, second=0)"/>
+    </record>
+    <record id="cron_daily_summary" model="ir.cron">
+        <field name="name">Cafeteria: Send Daily Summary to Parents</field>
+        <field name="model_id" ref="school_cafeteria.model_school_student"/>
+        <field name="state">code</field>
+        <field name="code">model.cron_send_daily_summary()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="active">False</field>
+        <field name="nextcall" eval="(DateTime.now() + timedelta(days=1)).replace(hour=15, minute=0, second=0)"/>
+    </record>
+</odoo>

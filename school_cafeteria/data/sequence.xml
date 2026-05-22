@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="sequence_recharge_request" model="ir.sequence">
+        <field name="name">Cafeteria Recharge Request</field>
+        <field name="code">school.recharge.request</field>
+        <field name="prefix">RCH/%(year)s/</field>
+        <field name="padding">4</field>
+        <field name="number_next">1</field>
+        <field name="number_increment">1</field>
+    </record>
+    <record id="param_notification_url" model="ir.config_parameter">
+        <field name="key">cafeteria.notification.service.url</field>
+        <field name="value"> </field>
+    </record>
+    <record id="param_notification_token" model="ir.config_parameter">
+        <field name="key">cafeteria.notification.service.token</field>
+        <field name="value"> </field>
+    </record>
+    <record id="param_low_balance_threshold" model="ir.config_parameter">
+        <field name="key">cafeteria.low_balance_threshold</field>
+        <field name="value">30</field>
+    </record>
+</odoo>

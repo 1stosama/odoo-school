@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="group_cafeteria_cashier" model="res.groups">
+        <field name="name">Cafeteria / Cashier</field>
+    </record>
+    <record id="group_cafeteria_accountant" model="res.groups">
+        <field name="name">Cafeteria / Accountant</field>
+        <field name="implied_ids" eval="[(4, ref('group_cafeteria_cashier'))]"/>
+    </record>
+    <record id="group_cafeteria_admin" model="res.groups">
+        <field name="name">Cafeteria / Administrator</field>
+        <field name="implied_ids" eval="[(4, ref('group_cafeteria_accountant'))]"/>
+    </record>
+</odoo>

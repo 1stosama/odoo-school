@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ══════════════════════════════════════════════════════════
+         WALLET TRANSACTION — LIST VIEW
+    ══════════════════════════════════════════════════════════ -->
+    <record id="view_wallet_transaction_list_main" model="ir.ui.view">
+        <field name="name">school.wallet.transaction.list.main</field>
+        <field name="model">school.wallet.transaction</field>
+        <field name="arch" type="xml">
+            <list string="Cafeteria Transactions"
+                  create="false" delete="false"
+                  decoration-success="transaction_type == 'credit'"
+                  decoration-danger="transaction_type == 'purchase'"
+                  decoration-info="transaction_type == 'refund'"
+                  decoration-muted="state == 'cancelled'">
+                <field name="date"/>
+                <field name="student_id"/>
+                <field name="transaction_type" widget="badge"
+                       decoration-success="transaction_type == 'credit'"
+                       decoration-danger="transaction_type == 'purchase'"
+                       decoration-info="transaction_type == 'refund'"/>
+                <field name="amount" string="Amount (EGP)" sum="Total"/>
+                <field name="reference"/>
+                <field name="cashier_id" string="Processed By"/>
+                <field name="pos_order_id" optional="hide"/>
+                <field name="plan_id" optional="hide"/>
+                <field name="state" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ══════════════════════════════════════════════════════════
+         WALLET TRANSACTION — FORM VIEW
+    ══════════════════════════════════════════════════════════ -->
+    <record id="view_wallet_transaction_form_main" model="ir.ui.view">
+        <field name="name">school.wallet.transaction.form.main</field>
+        <field name="model">school.wallet.transaction</field>
+        <field name="arch" type="xml">
+            <form string="Transaction" create="false">
+                <sheet>
+                    <widget name="web_ribbon"
+                            title="Cancelled"
+                            bg_color="bg-danger"
+                            invisible="state != 'cancelled'"/>
+                    <group>
+                        <group string="Transaction">
+                            <field name="date" readonly="1"/>
+                            <field name="transaction_type" readonly="1"/>
+                            <field name="amount" readonly="1"/>
+                            <field name="state" readonly="1"/>
+                        </group>
+                        <group string="Related Records">
+                            <field name="student_id" readonly="1"/>
+                            <field name="wallet_id" readonly="1"/>
+                            <field name="cashier_id" readonly="1"/>
+                            <field name="pos_order_id" readonly="1"/>
+                            <field name="plan_id" readonly="1"/>
+                        </group>
+                    </group>
+                    <group string="Reference">
+                        <field name="reference" readonly="1" nolabel="1"/>
+                    </group>
+                    <group string="Notes" invisible="note == False">
+                        <field name="note" readonly="1" nolabel="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <!-- ══════════════════════════════════════════════════════════
+         WALLET TRANSACTION — SEARCH VIEW
+    ══════════════════════════════════════════════════════════ -->
+    <record id="view_wallet_transaction_search_main" model="ir.ui.view">
+        <field name="name">school.wallet.transaction.search.main</field>
+        <field name="model">school.wallet.transaction</field>
+        <field name="arch" type="xml">
+            <search string="Search Transactions">
+                <field name="student_id"/>
+                <field name="reference"/>
+                <field name="cashier_id"/>
+                <filter string="Purchases" name="purchases"
+                        domain="[('transaction_type', '=', 'purchase')]"/>
+                <filter string="Credits (Recharges)" name="credits"
+                        domain="[('transaction_type', '=', 'credit')]"/>
+                <filter string="Refunds" name="refunds"
+                        domain="[('transaction_type', '=', 'refund')]"/>
+                <separator/>
+                <filter string="Today" name="today"
+                        domain="[('date', '>=', 'today')]"/>
+                <filter string="Last 7 Days" name="this_week"
+                        domain="[('date', '>=', 'today -7d')]"/>
+                <filter string="This Month" name="this_month"
+                        domain="[('date', '>=', '=month_start')]"/>
+                <separator/>
+                <filter string="Active Only" name="done"
+                        domain="[('state', '=', 'done')]"/>
+                <group>
+                    <filter string="Student" name="by_student"
+                            context="{'group_by': 'student_id'}"/>
+                    <filter string="Type" name="by_type"
+                            context="{'group_by': 'transaction_type'}"/>
+                    <filter string="Date (Day)" name="by_day"
+                            context="{'group_by': 'date:day'}"/>
+                    <filter string="Date (Month)" name="by_month"
+                            context="{'group_by': 'date:month'}"/>
+                    <filter string="Cashier" name="by_cashier"
+                            context="{'group_by': 'cashier_id'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <!-- ══════════════════════════════════════════════════════════
+         WALLET TRANSACTION — GRAPH VIEW (daily sales bar chart)
+    ══════════════════════════════════════════════════════════ -->
+    <record id="view_wallet_transaction_graph" model="ir.ui.view">
+        <field name="name">school.wallet.transaction.graph</field>
+        <field name="model">school.wallet.transaction</field>
+        <field name="arch" type="xml">
+            <graph string="Cafeteria Sales" type="bar">
+                <field name="date" interval="day"/>
+                <field name="amount" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <!-- ══════════════════════════════════════════════════════════
+         WALLET TRANSACTION — PIVOT VIEW
+    ══════════════════════════════════════════════════════════ -->
+    <record id="view_wallet_transaction_pivot" model="ir.ui.view">
+        <field name="name">school.wallet.transaction.pivot</field>
+        <field name="model">school.wallet.transaction</field>
+        <field name="arch" type="xml">
+            <pivot string="Cafeteria Analysis">
+                <field name="date" interval="day" type="row"/>
+                <field name="transaction_type" type="col"/>
+                <field name="amount" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <!-- ══════════════════════════════════════════════════════════
+         ACTION
+    ══════════════════════════════════════════════════════════ -->
+    <record id="action_school_wallet_transaction" model="ir.actions.act_window">
+        <field name="name">Cafeteria Transactions</field>
+        <field name="res_model">school.wallet.transaction</field>
+        <field name="view_mode">list,graph,pivot,form</field>
+        <field name="search_view_id" ref="view_wallet_transaction_search_main"/>
+        <field name="context">{'search_default_done': 1, 'search_default_today': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No transactions yet.</p>
+            <p>Transactions are created automatically when students purchase from the cafeteria.</p>
+        </field>
+    </record>
+
+</odoo>
