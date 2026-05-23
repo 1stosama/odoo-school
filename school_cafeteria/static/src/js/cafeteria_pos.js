@@ -3,10 +3,11 @@ console.log("CAFETERIA MODULE LOADED");
 
 import { patch } from "@web/core/utils/patch";
 import { ProductScreen } from "@point_of_sale/app/screens/product_screen/product_screen";
+import { PaymentScreen } from "@point_of_sale/app/screens/payment_screen/payment_screen";
 import { PosOrder } from "@point_of_sale/app/models/pos_order";
 import { useService } from "@web/core/utils/hooks";
 import { usePos } from "@point_of_sale/app/hooks/pos_hook";
-import { useEffect } from "@odoo/owl";
+import { onMounted } from "@odoo/owl";
 
 var _cafeteriaCardUid = null;
 
@@ -136,17 +137,55 @@ patch(ProductScreen.prototype, {
             _cafeteriaCardUid = student.card_uid || student.student_code;
             this._showCard(student);
             document.getElementById("caf-btn").textContent = '\u2713 ' + student.name.split(" ")[0];
+            // Set partner to satisfy POS Identify Customer requirement
             if (student.parent_id) {
-                var partner = this.pos.models["res.partner"].getBy("id", student.parent_id);
-                if (!partner) {
-                    var partners = await this.pos.data.searchRead("res.partner", [["id", "=", student.parent_id]]);
-                    if (partners && partners.length) partner = partners[0];
+                try {
+                    var partner = this.pos.models["res.partner"].getBy("id", student.parent_id);
+                    if (!partner) {
+                        var partnerData = await this.orm.call("res.partner", "search_read", [[["id", "=", student.parent_id]], ["id", "name", "email"]]);
+                        if (partnerData && partnerData.length) {
+                            partner = this.pos.models["res.partner"].add(partnerData[0], {add: true});
+                        }
+                    }
+                    if (partner) order.setPartner(partner);
+                } catch (e) {
+                    console.warn("Failed to set partner:", e);
                 }
-                if (partner) order.setPartner(partner);
             }
         } catch (e) {
             alert("Lookup failed: " + (e.message || e));
         }
+    },
+});
+
+patch(PaymentScreen.prototype, {
+    setup() {
+        super.setup(...arguments);
+        this.pos = usePos();
+        onMounted(() => this._showStudentOnPayment());
+    },
+    _showStudentOnPayment() {
+        var order = this.pos.getOrder();
+        if (!order || !order._cafeteria_student) return;
+        var container = document.querySelector(".payment-screen .payment-screen-content") ||
+                        document.querySelector(".payment-screen") ||
+                        document.querySelector(".pos-content");
+        if (!container) return;
+        var existing = document.getElementById("caf-payment-student");
+        if (existing) return;
+        var student = order._cafeteria_student;
+        var div = document.createElement("div");
+        div.id = "caf-payment-student";
+        div.style.cssText = "margin:0 0 8px 0;padding:8px;border:1px solid #e9ecef;border-radius:6px;background:#f8f9fa;display:flex;align-items:center;gap:8px";
+        var photoHtml = student.photo
+            ? '<img src="data:image/png;base64,' + student.photo + '" style="width:32px;height:32px;border-radius:50%;object-fit:cover;border:1px solid #dee2e6"/>'
+            : '<div style="width:32px;height:32px;border-radius:50%;background:#e9ecef;display:flex;align-items:center;justify-content:center;font-size:14px">&#x1F464;</div>';
+        div.innerHTML = photoHtml +
+            '<div style="flex:1;min-width:0;line-height:1.3">' +
+                '<div style="font-weight:600;font-size:12px;color:#212529">' + (student.name || '') + '</div>' +
+                '<div style="font-size:12px;font-weight:700;color:#1D6B4A">' + (student.balance || 0).toFixed(2) + ' EGP</div>' +
+            '</div>';
+        container.insertBefore(div, container.firstChild);
     },
 });
 

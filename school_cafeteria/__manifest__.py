@@ -65,6 +65,7 @@
         'static/description/screenshot_08_pos_student_card.png',
         'static/description/screenshot_11_portal.png',
     ],
+    'post_init_hook': 'post_init_hook',
     'installable': True,
     'application': True,
     'auto_install': False,
