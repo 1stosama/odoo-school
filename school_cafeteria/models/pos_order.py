@@ -301,21 +301,18 @@ class PosOrder(models.Model):
         return super().create(vals_list)
 
     def _send_purchase_notification(self):
-        """
-        Send WhatsApp/SMS to parent after purchase.
-        Calls the Node.js notification micro-service.
-        """
+        """Send notification to parent after purchase."""
         self.ensure_one()
         student = self.student_id
         if not student or student.notification_channel == 'none':
             return
 
         parent_phone = student.parent_phone
-        if not parent_phone:
-            _logger.warning('No parent phone for student %s', student.name)
+        parent_email = student.parent_id.email if student.parent_id else None
+        if not parent_phone and not parent_email:
+            _logger.warning('No parent contact for student %s', student.name)
             return
 
-        # Build item list from order lines
         items = []
         for line in self.lines:
             items.append(f'{line.product_id.name} x{line.qty:.0f}')
@@ -324,75 +321,99 @@ class PosOrder(models.Model):
         wallet = student.wallet_id[:1]
         new_balance = wallet.balance if wallet else 0.0
 
-        # Arabic + English message
         message = (
-            f'✅ {student.name} اشترى من الكافيتيريا:\n'
+            f'{student.name} purchased at cafeteria:\n'
             f'{items_str}\n'
-            f'المبلغ: {self.amount_total:.2f} جنيه\n'
-            f'الرصيد المتبقي: {new_balance:.2f} جنيه\n'
-            f'——\n'
-            f'{student.name} purchased: {items_str}\n'
-            f'Amount: {self.amount_total:.2f} EGP | Balance: {new_balance:.2f} EGP'
+            f'Amount: {self.amount_total:.2f} EGP\n'
+            f'Balance: {new_balance:.2f} EGP'
         )
+        subject = f'Cafeteria Purchase - {student.name}'
 
         self._call_notification_service(
             phone=parent_phone,
+            email=parent_email,
+            subject=subject,
             message=message,
             channel=student.notification_channel,
         )
 
     @api.model
-    def _call_notification_service(self, phone, message, channel='whatsapp'):
-        """
-        Call the Node.js notification micro-service.
-        Configure the URL in: Settings > Technical > System Parameters
-        Key: cafeteria.notification.service.url
-        """
-        service_url = self.env['ir.config_parameter'].sudo().get_param(
-            'cafeteria.notification.service.url', ''
-        ).strip()
-        service_token = self.env['ir.config_parameter'].sudo().get_param(
-            'cafeteria.notification.service.token', ''
-        ).strip()
-
-        if not service_url:
-            _logger.info('Notification service URL not configured. Skipping.')
-            return
-
+    def _send_email(self, recipient_email, subject, body):
+        """Send email using Odoo's built-in mail system."""
+        if not recipient_email:
+            return False
         try:
-            response = requests.post(
-                f'{service_url}/notify',
-                json={
-                    'phone': phone,
-                    'message': message,
-                    'channel': channel,
-                },
-                headers={
-                    'Authorization': f'Bearer {service_token}',
-                    'Content-Type': 'application/json',
-                },
-                timeout=5,
-            )
-            if response.status_code != 200:
-                _logger.warning(
-                    'Notification service returned %s: %s',
-                    response.status_code,
-                    response.text,
-                )
-        except requests.exceptions.Timeout:
-            _logger.warning('Notification service timed out. Message not sent.')
-        except requests.exceptions.ConnectionError:
-            _logger.warning('Cannot reach notification service. Message not sent.')
+            mail_values = {
+                'subject': subject,
+                'body_html': f'<pre style="font-family: sans-serif; font-size: 14px;">{body}</pre>',
+                'email_to': recipient_email,
+                'auto_delete': True,
+            }
+            mail = self.env['mail.mail'].sudo().create(mail_values)
+            mail.send()
+            _logger.info('Email sent to %s: %s', recipient_email, subject)
+            return True
         except Exception:
-            _logger.warning('Notification service call failed.', exc_info=True)
+            _logger.warning('Failed to send email to %s', recipient_email, exc_info=True)
+            return False
+
+    @api.model
+    def _call_notification_service(self, phone=None, email=None, subject='', message='', channel='email'):
+        """
+        Send notification to parent.
+        Primary: email via Odoo's mail system (always works in Community).
+        Enhancement: WhatsApp/SMS via external micro-service (configure separately).
+        """
+        # Always try email if we have an address
+        if email:
+            self._send_email(email, subject, message)
+
+        # For whatsapp/sms, also try the external micro-service
+        if channel in ('whatsapp', 'sms') and phone:
+            service_url = self.env['ir.config_parameter'].sudo().get_param(
+                'cafeteria.notification.service.url', ''
+            ).strip()
+            service_token = self.env['ir.config_parameter'].sudo().get_param(
+                'cafeteria.notification.service.token', ''
+            ).strip()
+
+            if not service_url:
+                return
+
+            try:
+                response = requests.post(
+                    f'{service_url}/notify',
+                    json={
+                        'phone': phone,
+                        'message': message,
+                        'channel': channel,
+                    },
+                    headers={
+                        'Authorization': f'Bearer {service_token}',
+                        'Content-Type': 'application/json',
+                    },
+                    timeout=5,
+                )
+                if response.status_code != 200:
+                    _logger.warning(
+                        'Notification service returned %s: %s',
+                        response.status_code, response.text,
+                    )
+            except requests.exceptions.Timeout:
+                _logger.warning('Notification service timed out.')
+            except requests.exceptions.ConnectionError:
+                _logger.warning('Cannot reach notification service.')
+            except Exception:
+                _logger.warning('Notification service call failed.', exc_info=True)
 
 
 def _send_purchase_notification_async(student, total_amount, product_ids, env):
-    """Send WhatsApp notification to parent. Called after successful deduction."""
+    """Send notification to parent after purchase. Called after successful deduction."""
     if student.notification_channel == 'none':
         return
     parent_phone = student.parent_phone
-    if not parent_phone:
+    parent_email = student.parent_id.email if student.parent_id else None
+    if not parent_phone and not parent_email:
         return
 
     products = env['product.product'].browse(product_ids)
@@ -401,35 +422,50 @@ def _send_purchase_notification_async(student, total_amount, product_ids, env):
     wallet = student.wallet_id[:1]
     new_balance = wallet.balance if wallet else 0.0
 
+    subject = f'Cafeteria Purchase - {student.name}'
     message = (
-        '\u2705 {} \u0627\u0634\u062a\u0631\u0649 \u0645\u0646 \u0627\u0644\u0643\u0627\u0641\u064a\u062a\u064a\u0631\u064a\u0627:\n'
-        '{}\n'
-        '\u0627\u0644\u0645\u0628\u0644\u063a: {:.2f} \u062c\u0646\u064a\u0647\n'
-        '\u0627\u0644\u0631\u0635\u064a\u062f \u0627\u0644\u0645\u062a\u0628\u0642\u064a: {:.2f} \u062c\u0646\u064a\u0647\n'
-        '\u2014\u2014\n'
-        '{} purchased: {}\n'
-        'Amount: {:.2f} EGP | Balance: {:.2f} EGP'
-    ).format(student.name, items_str, total_amount, new_balance,
-             student.name, items_str, total_amount, new_balance)
-
-    service_url = env['ir.config_parameter'].sudo().get_param(
-        'cafeteria.notification.service.url', ''
+        f'{student.name} purchased at cafeteria:\n'
+        f'{items_str}\n'
+        f'Amount: {total_amount:.2f} EGP\n'
+        f'Balance: {new_balance:.2f} EGP'
     )
-    service_token = env['ir.config_parameter'].sudo().get_param(
-        'cafeteria.notification.service.token', ''
-    )
-    if not service_url:
-        return
 
-    try:
-        requests.post(
-            '{}/notify'.format(service_url),
-            json={'phone': parent_phone, 'message': message, 'channel': student.notification_channel},
-            headers={'Authorization': 'Bearer {}'.format(service_token)},
-            timeout=4,
+    # Primary: email via Odoo built-in
+    if parent_email:
+        try:
+            mail_values = {
+                'subject': subject,
+                'body_html': f'<pre style="font-family: sans-serif; font-size: 14px;">{message}</pre>',
+                'email_to': parent_email,
+                'auto_delete': True,
+            }
+            mail = env['mail.mail'].sudo().create(mail_values)
+            mail.send()
+        except Exception:
+            _logger.warning('Failed to send email to %s', parent_email, exc_info=True)
+
+    # Enhancement: external micro-service for whatsapp/sms
+    if student.notification_channel in ('whatsapp', 'sms') and parent_phone:
+        service_url = env['ir.config_parameter'].sudo().get_param(
+            'cafeteria.notification.service.url', ''
         )
-    except Exception as e:
-        _logger.warning('Notification failed: %s', e)
+        service_token = env['ir.config_parameter'].sudo().get_param(
+            'cafeteria.notification.service.token', ''
+        )
+        if service_url:
+            try:
+                requests.post(
+                    '{}/notify'.format(service_url),
+                    json={
+                        'phone': parent_phone,
+                        'message': message,
+                        'channel': student.notification_channel,
+                    },
+                    headers={'Authorization': 'Bearer {}'.format(service_token)},
+                    timeout=4,
+                )
+            except Exception as e:
+                _logger.warning('Notification failed: %s', e)
 
 
 class SchoolStudent(models.Model):
@@ -439,31 +475,32 @@ class SchoolStudent(models.Model):
     def _send_recharge_notification(self, credit_amount, plan=None):
         """Notify parent when wallet is recharged."""
         parent_phone = self.parent_phone
-        if not parent_phone or self.notification_channel == 'none':
+        parent_email = self.parent_id.email if self.parent_id else None
+        if self.notification_channel == 'none':
+            return
+        if not parent_phone and not parent_email:
             return
 
         if plan:
+            subject = f'Meal Plan Activated - {self.name}'
             message = (
-                f'💳 تم تفعيل باقة الكافيتيريا لـ {self.name}\n'
-                f'الباقة: {plan.name}\n'
-                f'الرصيد المضاف: {credit_amount:.2f} جنيه\n'
-                f'الرصيد الحالي: {self.balance:.2f} جنيه\n'
-                f'——\n'
-                f'Meal plan activated: {plan.name}\n'
-                f'Credits: {credit_amount:.2f} EGP | Balance: {self.balance:.2f} EGP'
+                f'Meal plan activated for {self.name}\n'
+                f'Plan: {plan.name}\n'
+                f'Credits: {credit_amount:.2f} EGP\n'
+                f'Balance: {self.balance:.2f} EGP'
             )
         else:
+            subject = f'Cafeteria Wallet Recharged - {self.name}'
             message = (
-                f'💰 تم شحن رصيد كافيتيريا {self.name}\n'
-                f'المبلغ المضاف: {credit_amount:.2f} جنيه\n'
-                f'الرصيد الحالي: {self.balance:.2f} جنيه\n'
-                f'——\n'
-                f'Cafeteria balance topped up: +{credit_amount:.2f} EGP\n'
+                f'Cafeteria balance topped up for {self.name}\n'
+                f'Amount: +{credit_amount:.2f} EGP\n'
                 f'New balance: {self.balance:.2f} EGP'
             )
 
         self.env['pos.order']._call_notification_service(
             phone=parent_phone,
+            email=parent_email,
+            subject=subject,
             message=message,
             channel=self.notification_channel,
         )
@@ -476,18 +513,21 @@ class SchoolStudent(models.Model):
         for student in self:
             if student.balance <= threshold and student.balance > 0:
                 parent_phone = student.parent_phone
-                if not parent_phone or student.notification_channel == 'none':
-                 continue
+                parent_email = student.parent_id.email if student.parent_id else None
+                if student.notification_channel == 'none':
+                    continue
+                if not parent_phone and not parent_email:
+                    continue
+                subject = f'Low Cafeteria Balance - {student.name}'
                 message = (
-                    f'⚠️ تنبيه: رصيد كافيتيريا {student.name} منخفض\n'
-                    f'الرصيد الحالي: {student.balance:.2f} جنيه\n'
-                    f'يرجى الشحن لتجنب انقطاع الخدمة\n'
-                    f'——\n'
                     f'Low balance alert for {student.name}\n'
-                    f'Current balance: {student.balance:.2f} EGP. Please recharge.'
+                    f'Current balance: {student.balance:.2f} EGP.\n'
+                    f'Please recharge to avoid service interruption.'
                 )
                 self.env['pos.order']._call_notification_service(
                     phone=parent_phone,
+                    email=parent_email,
+                    subject=subject,
                     message=message,
                     channel=student.notification_channel,
                 )
@@ -515,24 +555,24 @@ class SchoolStudent(models.Model):
         """Scheduled action: send daily balance summary to opted-in parents."""
         students = self.search([
             ('active', '=', True),
-            ('whatsapp_opt_in', '=', True),
             ('notification_channel', '!=', 'none'),
         ])
         for student in students:
             parent_phone = student.parent_phone
-            if not parent_phone:
+            parent_email = student.parent_id.email if student.parent_id else None
+            if not parent_phone and not parent_email:
                 continue
+            subject = f'Cafeteria Daily Summary - {student.name}'
             message = (
-                f'📊 ملخص يومي - كافيتيريا {student.name}\n'
-                f'الإنفاق اليوم: {student.today_spent:.2f} جنيه\n'
-                f'الرصيد الحالي: {student.balance:.2f} جنيه\n'
-                f'——\n'
                 f'Daily summary for {student.name}\n'
-                f'Today: {student.today_spent:.2f} EGP | Balance: {student.balance:.2f} EGP'
+                f'Spent today: {student.today_spent:.2f} EGP\n'
+                f'Current balance: {student.balance:.2f} EGP'
             )
             try:
                 self.env['pos.order']._call_notification_service(
                     phone=parent_phone,
+                    email=parent_email,
+                    subject=subject,
                     message=message,
                     channel=student.notification_channel,
                 )

@@ -89,13 +89,14 @@ class SchoolStudent(models.Model):
     )
     notification_channel = fields.Selection(
         selection=[
+            ('email', 'Email'),
             ('whatsapp', 'WhatsApp'),
             ('sms', 'SMS'),
-            ('email', 'Email'),
             ('none', 'None'),
         ],
         string='Notification Channel',
-        default='whatsapp',
+        default='email',
+        help='Email is always sent if a parent email is set. WhatsApp/SMS require an external notification service.',
     )
 
     # ------------------------------------------------------------------ #
